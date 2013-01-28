@@ -1,3 +1,3 @@
 ## Choreo.js
 
-### Javascript library for building interactive walkthroughs
+### for building interactive walkthroughs

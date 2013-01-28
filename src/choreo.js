@@ -1,196 +1,241 @@
+// Choreo Core
+// provides minimal sequence control
+
 ;(function (window, undefined) {
 
-    var pub = window.CHOREO || {};
+    // TODO: parse url args for debugging =====================================
 
-    // parse url args for debugging
+    var _debug               = false
 
-    var scenes              = [],
-        templates           = {};
+    // Private variables ======================================================
 
-    // state vars
-    var lock                = false,
-        currentScene        = null,
-        currentSceneIndex   = -1,
-        numTotalSteps       = 0,
-        currentStepIndex    = 0;
+    var _scenes              = []
 
-    // cache dom elements
-    var $progressBar        = $('#progress'),
-        $leftButton         = $('#nav-left'),
-        $rightButton        = $('#nav-right');
+    var _lock                = false,
+        _keyboardEnabled     = true
 
-        init: function () {
+    var _totalScenes         = 0,
+        _currentScene        = null,
+        _currentSceneIndex   = -1
 
-            if (window.screen.width <= 1280 || window.screen.height <= 800) {
-                document.body.classList.add('small-screen');
+    var _totalSteps          = 0,
+        _currentStep         = null,
+        _currentStepIndex    = 0
+
+    // Event System ===========================================================
+    // - thanks to: https://github.com/aralejs/events
+
+    var eventSplitter = /\s+/
+
+    var Events = function () {}
+
+    Events.prototype.on = function (events, callback, context) {
+        var cache, event, list
+        if (!callback) return this
+
+        cache = this.__events || (this.__events = {})
+        events = events.split(eventSplitter)
+
+        while (event = events.shift()) {
+            list = cache[event] || (cache[event] = [])
+            list.push(callback, context)
+        }
+
+        return this
+    }
+
+    Events.prototype.off = function (events, callback, context) {
+        var cache, event, list, i
+
+        if (!(cache = this.__events)) return this
+        if (!(events || callback || context)) {
+            delete this.__events
+            return this
+        }
+
+        events = events ? events.split(eventSplitter) : Object.keys(cache)
+
+        while (event = events.shift()) {
+            list = cache[event]
+            if (!list) continue
+
+            if (!(callback || context)) {
+                delete cache[event]
+                continue
             }
 
-            CS.loadTemplates(function () {
-
-                // init the scenes
-                // & count steps
-                for (var i = 0, j = CS.scenes.length; i < j; ++i) {
-                    CS.scenes[i].init();
-                    CS.totalSteps += CS.scenes[i].steps.length + 1;
+            for (i = list.length - 2; i >= 0; i -= 2) {
+                if (!(callback && list[i] !== callback ||
+                        context && list[i + 1] !== context)) {
+                    list.splice(i, 2)
                 }
-
-                // load first scene
-                CS.currentSceneIndex = 0;
-                var s = CS.currentScene = CS.scenes[0];
-                s.show();
-                CS.caption.set(s.caption);
-                setTimeout(function () {
-                    s.onEnter();
-                });
-
-                // key events
-                window.addEventListener('keyup', function (e) {
-                    if (CS.lock) return;
-                    switch (e.keyCode) {
-                        case 39:
-                            CS.next();
-                            break;
-                        case 37:
-                            CS.prev();
-                        default:
-                            break;
-                    }
-                });
-
-                CS.leftButton.addEventListener('click', function() {
-                    CS.prev();
-                }, false);
-
-                CS.rightButton.addEventListener('click', function() {
-                    CS.next();
-                }, false);
-
-            });
-
-        },
-
-        loadTemplates: function (callback) {
-
-            var total = this.scenes.length;
-            for (var i = 0, j = this.scenes.length; i < j; ++i) {
-                CS.getTemplate(this.scenes[i].id, function (data, id) {
-                    CS.templates[id] = data;
-                    total--;
-                    if (total === 0) {
-                        callback();
-                    }
-                });
-            }
-
-        },
-
-        getTemplate: function (id, callback) {
-
-            var url = 'templates/' + id + '.html';
-
-            var request = new XMLHttpRequest();
-            request.open('GET', url);
-            request.addEventListener('load', function (e) {
-                if (request.status === 200) {
-                    callback(request.responseText, id);
-                }
-            });
-            request.send();
-
-        },
-
-        next: function () {
-            if (!CS.currentScene.next()) {
-                if (CS.nextScene()) {
-                    CS.updateProgress(1);
-                }
-            } else {
-                CS.updateProgress(1);
-            }
-        },
-
-        prev: function () {
-            if (!CS.currentScene.prev()) {
-                if (CS.prevScene()) {
-                    CS.updateProgress(-1);
-                }
-            } else {
-                CS.updateProgress(-1);
-            }
-        },
-
-        nextScene: function () {
-
-            if (CS.currentSceneIndex >= CS.scenes.length - 1) return false;
-
-            var newScene = CS.scenes[CS.currentSceneIndex + 1];
-
-            CS.currentScene.hide('prev');
-            newScene.show();
-            CS.currentSceneIndex++;
-            CS.currentScene = newScene;
-            CS.caption.set(newScene.caption);
-
-            return true;
-
-        },
-
-        prevScene: function () {
-
-            if (CS.currentSceneIndex <= 0) return false;
-
-            var newScene = CS.scenes[CS.currentSceneIndex - 1];
-            CS.currentScene.hide('next');
-            newScene.show();
-            CS.currentSceneIndex--;
-            CS.currentScene = newScene;
-
-            var cap = newScene.getPrevCaption(newScene.currentStepIndex);
-            CS.caption.set(cap, 'prev');
-
-            return true;
-
-        },
-
-        updateProgress: function (inc) {
-
-            this.currentStep += inc;
-            this.progressBar.style.width = ~~(this.currentStep / (this.totalSteps - 1) * 100) + '%';
-
-            if (this.currentStep == this.totalSteps-1) {
-                CS.rightButton.classList.add('hidden');
-            } else { 
-                CS.rightButton.classList.remove('hidden');
-            }
-
-            if (this.currentStep == 0) {
-                CS.leftButton.classList.add('hidden');
-            } else { 
-                CS.leftButton.classList.remove('hidden');
-            }
-
-        },
-
-        log: function (msg) {
-            if (CS.debug) {
-                console.log(msg);
             }
         }
 
-    };
-
-    window.CHOREO = pub;
-
-    // Helper functions, hoisted
-
-    function $ (selector) {
-        return window.document.querySelector(selector);
+        return this
     }
 
-    function $$ (selector) {
-        return window.document.querySelectorAll(selector);
+    Events.prototype.trigger = function(events) {
+        var cache, event, all, list, i, len, rest = [], args
+        if (!(cache = this.__events)) return this
+
+        events = events.split(eventSplitter)
+
+        for (i = 1, len = arguments.length; i < len; i++) {
+            rest[i - 1] = arguments[i]
+        }
+
+        while (event = events.shift()) {
+            if (all = cache.all) all = all.slice()
+            if (list = cache[event]) list = list.slice()
+
+            if (list) {
+                for (i = 0, len = list.length; i < len; i += 2) {
+                    list[i].apply(list[i + 1] || this, rest)
+                }
+            }
+
+            if (all) {
+                args = [event].concat(rest)
+                for (i = 0, len = all.length; i < len; i += 2) {
+                    all[i].apply(all[i + 1] || this, args)
+                }
+            }
+        }
+
+        return this
     }
 
-})(window);
+    Events.mixTo = function(receiver) {
+        receiver = receiver.prototype || receiver
+        var proto = Events.prototype
 
-window.onload = CHOREO.init;
+        for (var p in proto) {
+            if (proto.hasOwnProperty(p)) {
+                receiver[p] = proto[p]
+            }
+        }
+    }
+
+    // Scene ==================================================================
+
+    var Scene = function (id) {
+
+        this.id                 = id
+        this.caption            = ''
+        this.steps              = []
+        this.exports            = {}
+
+        this.currentStep        = null
+        this.currentStepIndex   = 0
+
+    }
+
+    Events.mixTo(Scene)
+
+    Scene.prototype.addSteps = function (stepsArr) {
+        var steps = this.steps
+        stepsArr.forEach(function (stepOptions) {
+            steps.push(new Step(stepOptions))
+        })
+    }
+
+    Scene.prototype.nextStep = function () {
+
+    }
+
+    Scene.prototype.prevStep = function () {
+
+    }
+
+    // Step ===================================================================
+
+    var Step = function (options) {
+
+    }
+
+    Events.mixTo(Step)
+
+    // The public API object ==================================================
+
+    var pub = window.CHOREO || {
+        get totalSteps () {
+            return _totalSteps
+        },
+        get isLocked () {
+            return _lock
+        },
+        get currentStep () {
+            return _currentStep
+        },
+        get currentStepIndex () {
+            return _currentStepIndex
+        },
+        get currentScene () {
+            return _currentScene
+        },
+        get currentSceneIndex () {
+            return _currentSceneIndex
+        }
+    }
+
+    Events.mixTo(pub)
+
+    pub.addScene = function (id, setupFunc) {
+        var scene = new Scene(id)
+        _scenes.push(scene)
+        setupFunc(scene)
+    }
+
+    pub.start = function () {
+        // count stuff
+        _totalScenes = _scenes.length
+        _scenes.forEach(function (scene) {
+            _totalSteps += scene.steps.length
+        })
+
+        // listen for events
+
+    }
+
+    pub.next = function () {
+        if (_lock) return
+    }
+
+    pub.prev = function () {
+        if (_lock) return
+    }
+
+    pub.getScene = function (id) {
+        for (var i = 0, j = _scenes.length; i < j; i++) {
+            if (_scenes[i].id === id) {
+                return _scenes[i]
+            }
+        }
+    }
+
+    pub.lock = function () {
+        _lock = true
+    }
+
+    pub.unlock = function () {
+        _lock = false
+    }
+
+    pub.enableKeyboard = function () {
+        _keyboardEnabled = true
+    }
+
+    pub.disableKeyboard = function () {
+        _keyboardEnabled = false
+    }
+
+    // Hoisted Helpers ========================================================
+
+    function getLastValidCaption (scene) {
+
+    }
+
+    window.CHOREO = pub
+
+}) (window)

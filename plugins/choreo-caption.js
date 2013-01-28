@@ -1,3 +1,8 @@
+// Provides animated caption text (non-intrusive)
+
+// options:
+//   - position: top | bottom
+
 ;(function () {
 
     CS.caption = {
