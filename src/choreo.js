@@ -127,38 +127,54 @@
         this.exports            = {}
 
         this.currentStep        = null
-        this.currentStepIndex   = 0
+        this.currentStepIndex   = -1
 
     }
 
     Events.mixTo(Scene)
 
     Scene.prototype.addSteps = function (stepsArr) {
-        for (var i = 0, j = stepsArr; i < j; i++) {
+        for (var i = 0, j = stepsArr.length; i < j; i++) {
             this.steps.push(new Step(stepsArr[i]))
         }
+        this.currentStep = this.steps[0]
     }
 
     Scene.prototype.nextStep = function () {
-
+        this.currentStepIndex += 1
+        if (this.currentStep) {
+            this.currentStep.trigger('exit', 1)
+        }
+        this.currentStep = this.steps[this.currentStepIndex]
+        this.currentStep.trigger('enter', 1)
     }
 
     Scene.prototype.prevStep = function () {
-
+        this.currentStepIndex -= 1
+        this.currentStep.trigger('exit', -1)
+        this.currentStep = this.steps[this.currentStepIndex]
+        if (this.currentStep) {
+            this.currentStep.trigger('enter', -1)
+        }
     }
 
     Scene.prototype.hasNextStep = function () {
-
+        return this.currentStepIndex + 1 < this.steps.length
     }
 
     Scene.prototype.hasPrevStep = function () {
-
+        return this.currentStepIndex > -1
     }
 
     // Step ===================================================================
 
     var Step = function (options) {
-
+        this.caption = options.caption
+        for (var e in options.events) {
+            if (typeof options.events[e] === 'function') {
+                this.on(e, options.events[e])
+            }
+        }
     }
 
     Events.mixTo(Step)
@@ -189,8 +205,10 @@
         return _currentSceneIndex > 0
     }
 
-    function _log (msg) {
-        
+    function _log (level, msg) {
+        if (level <= _debugLevel) {
+            console.log('[CHOREO] ' + msg);
+        }
     }
 
     // Public API object ======================================================
@@ -225,6 +243,9 @@
     }
 
     choreo.start = function () {
+
+        _log(3, 'start')
+
         // count stuff
         _totalScenes = _scenes.length
         _totalSteps  = 0
@@ -233,7 +254,7 @@
         })
 
         // listen for keyboard events
-        window.addEventListener('keyup', function (e) {
+        document.addEventListener('keyup', function (e) {
             if (!_keyboardEnabled) return
             switch (e.keyCode) {
                 case 39:
@@ -246,34 +267,79 @@
             }
         })
 
-        // set to first step
         _currentSceneIndex  = 0
-        _currentStepIndex   = 0
+        _currentStepIndex   = -1 // this is negative 1 because first step is not triggered yet
         _currentScene       = _scenes[0]
-        _currentStep        = _currentScene.steps[0]
+
+        _currentScene.trigger('enter', 1)
         
     }
 
     choreo.next = function () {
-        if (_lock) return
-        if (_currentScene.hasNextStep()) {
-            choreo.trigger('next')
-            _currentScene.nextStep()
-        } else if (_hasNextScene()) {
-            choreo.trigger('next')
-            _nextScene()
+
+        _log(3, 'next called')
+
+        if (_lock) {
+            _log(2, 'locked, ignore next')
+            return
         }
+        if (_currentScene.hasNextStep()) {
+
+            _log(3, 'next step called')
+            choreo.trigger('next')
+
+            _currentScene.nextStep()
+            _currentStep = _currentScene.currentStep
+            _currentStepIndex += 1
+            
+        } else if (_hasNextScene()) {
+
+            _log(3, 'next scene called')
+            choreo.trigger('next')
+
+            _currentStepIndex += 1
+            _nextScene()
+            
+        } else {
+            _log(2, 'at the end, ignore next')
+        }
+
+        _log(2, 'at step ' + (_currentStepIndex+1) + '/' + _totalSteps)
     }
 
     choreo.prev = function () {
-        if (_lock) return
-        if (_currentScene.hasPrevStep()) {
-            choreo.trigger('prev')
-            _currentScene.prevStep()
-        } else if (_hasPrevScene()) {
-            choreo.trigger('prev')
-            _prevScene()
+
+        _log(3, 'prev called')
+
+        if (_lock) {
+            _log(2, 'locked, ignore prev')
+            return
         }
+        if (_currentScene.hasPrevStep()) {
+
+            _log(3, 'prev step called')
+            choreo.trigger('prev')
+
+            _currentScene.prevStep()
+            _currentStepIndex -= 1
+            _currentStep = _currentScene.currentStep
+            
+        } else if (_hasPrevScene()) {
+
+            _log(3, 'prev scene called')
+            choreo.trigger('prev')
+
+            _currentStepIndex -= 1
+            _prevScene()
+            
+
+        } else {
+
+            _log(2, 'at the start, ignore prev')
+
+        }
+
+        _log(2, 'at step ' + (_currentStepIndex+1) + '/' + _totalSteps)
     }
 
     choreo.getScene = function (id) {
@@ -301,7 +367,18 @@
     }
 
     choreo.setDebugLevel = function (level) {
-        _debugLevel = level;
+        _debugLevel = level
+    }
+
+    choreo.inspect = function () {
+        console.log({
+            currentStepIndex: _currentStepIndex,
+            currentSceneIndex: _currentSceneIndex,
+            lock: _lock,
+            keyboard: _keyboardEnabled,
+            totalSteps: _totalSteps,
+            totalScenes: _totalScenes
+        })
     }
 
     window.CHOREO = choreo
