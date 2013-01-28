@@ -5,7 +5,7 @@
 
     // TODO: parse url args for debugging =====================================
 
-    var _debug               = false
+    var _debugLevel          = 0
 
     // Private variables ======================================================
 
@@ -14,13 +14,13 @@
     var _lock                = false,
         _keyboardEnabled     = true
 
-    var _totalScenes         = 0,
-        _currentScene        = null,
-        _currentSceneIndex   = -1
+    var _totalScenes,
+        _currentScene,
+        _currentSceneIndex
 
-    var _totalSteps          = 0,
-        _currentStep         = null,
-        _currentStepIndex    = 0
+    var _totalSteps,
+        _currentStep,
+        _currentStepIndex
 
     // Event System ===========================================================
     // - thanks to: https://github.com/aralejs/events
@@ -134,10 +134,9 @@
     Events.mixTo(Scene)
 
     Scene.prototype.addSteps = function (stepsArr) {
-        var steps = this.steps
-        stepsArr.forEach(function (stepOptions) {
-            steps.push(new Step(stepOptions))
-        })
+        for (var i = 0, j = stepsArr; i < j; i++) {
+            this.steps.push(new Step(stepsArr[i]))
+        }
     }
 
     Scene.prototype.nextStep = function () {
@@ -145,6 +144,14 @@
     }
 
     Scene.prototype.prevStep = function () {
+
+    }
+
+    Scene.prototype.hasNextStep = function () {
+
+    }
+
+    Scene.prototype.hasPrevStep = function () {
 
     }
 
@@ -156,9 +163,39 @@
 
     Events.mixTo(Step)
 
-    // The public API object ==================================================
+    // Private methods ========================================================
 
-    var pub = window.CHOREO || {
+    function _nextScene () {
+        choreo.trigger('next-scene')
+        _currentScene.trigger('exit', 1) // +1 means going forward
+        _currentSceneIndex += 1
+        _currentScene = _scenes[_currentSceneIndex]
+        _currentScene.trigger('enter', 1)
+    }
+
+    function _prevScene () {
+        choreo.trigger('prev-scene')
+        _currentScene.trigger('exit', -1) // -1 means going backwards
+        _currentSceneIndex -= 1
+        _currentScene = _scenes[_currentSceneIndex]
+        _currentScene.trigger('enter', -1)
+    }
+
+    function _hasNextScene () {
+        return _currentSceneIndex + 1 < _totalScenes
+    }
+
+    function _hasPrevScene () {
+        return _currentSceneIndex > 0
+    }
+
+    function _log (msg) {
+        
+    }
+
+    // Public API object ======================================================
+
+    var choreo = window.CHOREO || {
         get totalSteps () {
             return _totalSteps
         },
@@ -179,34 +216,67 @@
         }
     }
 
-    Events.mixTo(pub)
+    Events.mixTo(choreo)
 
-    pub.addScene = function (id, setupFunc) {
+    choreo.addScene = function (id, setupFunc) {
         var scene = new Scene(id)
         _scenes.push(scene)
         setupFunc(scene)
     }
 
-    pub.start = function () {
+    choreo.start = function () {
         // count stuff
         _totalScenes = _scenes.length
+        _totalSteps  = 0
         _scenes.forEach(function (scene) {
             _totalSteps += scene.steps.length
         })
 
-        // listen for events
+        // listen for keyboard events
+        window.addEventListener('keyup', function (e) {
+            if (!_keyboardEnabled) return
+            switch (e.keyCode) {
+                case 39:
+                    choreo.next()
+                    break
+                case 37:
+                    choreo.prev()
+                default:
+                    break
+            }
+        })
 
+        // set to first step
+        _currentSceneIndex  = 0
+        _currentStepIndex   = 0
+        _currentScene       = _scenes[0]
+        _currentStep        = _currentScene.steps[0]
+        
     }
 
-    pub.next = function () {
+    choreo.next = function () {
         if (_lock) return
+        if (_currentScene.hasNextStep()) {
+            choreo.trigger('next')
+            _currentScene.nextStep()
+        } else if (_hasNextScene()) {
+            choreo.trigger('next')
+            _nextScene()
+        }
     }
 
-    pub.prev = function () {
+    choreo.prev = function () {
         if (_lock) return
+        if (_currentScene.hasPrevStep()) {
+            choreo.trigger('prev')
+            _currentScene.prevStep()
+        } else if (_hasPrevScene()) {
+            choreo.trigger('prev')
+            _prevScene()
+        }
     }
 
-    pub.getScene = function (id) {
+    choreo.getScene = function (id) {
         for (var i = 0, j = _scenes.length; i < j; i++) {
             if (_scenes[i].id === id) {
                 return _scenes[i]
@@ -214,28 +284,26 @@
         }
     }
 
-    pub.lock = function () {
+    choreo.lock = function () {
         _lock = true
     }
 
-    pub.unlock = function () {
+    choreo.unlock = function () {
         _lock = false
     }
 
-    pub.enableKeyboard = function () {
+    choreo.enableKeyboard = function () {
         _keyboardEnabled = true
     }
 
-    pub.disableKeyboard = function () {
+    choreo.disableKeyboard = function () {
         _keyboardEnabled = false
     }
 
-    // Hoisted Helpers ========================================================
-
-    function getLastValidCaption (scene) {
-
+    choreo.setDebugLevel = function (level) {
+        _debugLevel = level;
     }
 
-    window.CHOREO = pub
+    window.CHOREO = choreo
 
 }) (window)

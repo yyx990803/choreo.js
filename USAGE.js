@@ -53,7 +53,9 @@ CHOREO.addScene('first', function (scene) {
 
         ]);
 
-    // You can use scene.exports to expose public stuff
+    // Use scene.exports to expose public stuff
+    // you can actually attach any thing to the scene object
+    // this is just for keeping it a bit cleaner
 
     var someData = '12345';
     scene.exports.data = someData;
