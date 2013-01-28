@@ -127,7 +127,7 @@
         this.exports            = {}
 
         this.currentStep        = null
-        this.currentStepIndex   = -1
+        this.currentStepIndex   = -1 // the -1 stands for the entering state of each scene
 
     }
 
@@ -250,7 +250,7 @@
         _totalScenes = _scenes.length
         _totalSteps  = 0
         _scenes.forEach(function (scene) {
-            _totalSteps += scene.steps.length
+            _totalSteps += scene.steps.length + 1 // extra 1 step counted for the starting state of each scene
         })
 
         // listen for keyboard events
@@ -268,10 +268,12 @@
         })
 
         _currentSceneIndex  = 0
-        _currentStepIndex   = -1 // this is negative 1 because first step is not triggered yet
+        _currentStepIndex   = 0
         _currentScene       = _scenes[0]
 
         _currentScene.trigger('enter', 1)
+
+        _log(2, 'at step ' + (_currentStepIndex+1) + '/' + _totalSteps)
         
     }
 

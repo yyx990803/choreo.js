@@ -73,6 +73,15 @@ CHOREO.addScene('first', function (scene) {
 
 });
 
+CHOREO.addScene('second', function (scene) {
+
+    scene.caption = 'this is the second scene!!!';
+    scene.on('enter', function (dir) {
+        console.log(this.caption);
+    });
+
+});
+
 // Start listening for input
 
 CHOREO.start();
