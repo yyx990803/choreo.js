@@ -144,18 +144,26 @@
     Scene.prototype.nextStep = function () {
         this.currentStepIndex += 1
         if (this.currentStep) {
-            this.currentStep.trigger('exit', 1)
+            this.currentStep
+                .trigger('exit', 1)
+                .trigger('toNext')
         }
         this.currentStep = this.steps[this.currentStepIndex]
-        this.currentStep.trigger('enter', 1)
+        this.currentStep
+            .trigger('enter', 1)
+            .trigger('fromPrev')
     }
 
     Scene.prototype.prevStep = function () {
         this.currentStepIndex -= 1
-        this.currentStep.trigger('exit', -1)
+        this.currentStep
+            .trigger('exit', -1)
+            .trigger('toPrev')
         this.currentStep = this.steps[this.currentStepIndex]
         if (this.currentStep) {
-            this.currentStep.trigger('enter', -1)
+            this.currentStep
+                .trigger('enter', -1)
+                .trigger('fromNext')
         }
     }
 
@@ -183,19 +191,25 @@
     // Private methods ========================================================
 
     function _nextScene () {
-        choreo.trigger('next-scene')
-        _currentScene.trigger('exit', 1) // +1 means going forward
+        _currentScene
+            .trigger('exit', 1) // +1 means going forward
+            .trigger('toNext')
         _currentSceneIndex += 1
         _currentScene = _scenes[_currentSceneIndex]
-        _currentScene.trigger('enter', 1)
+        _currentScene
+            .trigger('enter', 1)
+            .trigger('fromPrev')
     }
 
     function _prevScene () {
-        choreo.trigger('prev-scene')
-        _currentScene.trigger('exit', -1) // -1 means going backwards
+        _currentScene
+            .trigger('exit', -1) // -1 means going backwards
+            .trigger('toPrev')
         _currentSceneIndex -= 1
         _currentScene = _scenes[_currentSceneIndex]
-        _currentScene.trigger('enter', -1)
+        _currentScene
+            .trigger('enter', -1)
+            .trigger('fromNext')
     }
 
     function _hasNextScene () {
@@ -208,7 +222,7 @@
 
     function _log (level, msg) {
         if (level <= _debugLevel) {
-            console.log('[CHOREO] ' + msg);
+            console.log('[CHOREO] ' + msg)
         }
     }
 
@@ -272,7 +286,9 @@
         _currentStepIndex   = 0
         _currentScene       = _scenes[0]
 
-        _currentScene.trigger('enter', 1)
+        _currentScene
+            .trigger('enter', 1)
+            .trigger('fromPrev')
 
         _log(2, 'at step ' + (_currentStepIndex+1) + '/' + _totalSteps)
         
@@ -289,7 +305,9 @@
         if (_currentScene.hasNextStep()) {
 
             _log(3, 'next step called')
-            choreo.trigger('next')
+            choreo
+                .trigger('next')
+                .trigger('nextStep')
 
             _currentScene.nextStep()
             _currentStep = _currentScene.currentStep
@@ -298,7 +316,9 @@
         } else if (_hasNextScene()) {
 
             _log(3, 'next scene called')
-            choreo.trigger('next')
+            choreo
+                .trigger('next')
+                .trigger('nextScene')
 
             _currentStepIndex += 1
             _nextScene()
@@ -321,7 +341,9 @@
         if (_currentScene.hasPrevStep()) {
 
             _log(3, 'prev step called')
-            choreo.trigger('prev')
+            choreo
+                .trigger('prev')
+                .trigger('prevStep')
 
             _currentScene.prevStep()
             _currentStepIndex -= 1
@@ -330,7 +352,9 @@
         } else if (_hasPrevScene()) {
 
             _log(3, 'prev scene called')
-            choreo.trigger('prev')
+            choreo
+                .trigger('prev')
+                .trigger('prevScene')
 
             _currentStepIndex -= 1
             _prevScene()

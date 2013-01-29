@@ -29,19 +29,33 @@ CHOREO.addScene('first', function (scene) {
             {
                 caption: 'this is a caption for a step', // caption is optional
                 events: {
+
                     enter: function (dir) {
                         // trigger something on the scene
                         scene.trigger('cool', dir);
+                    },
+
+                    exit: function (dir) {
                         // this is bound to the step object, but not this plain object...
                         console.log(this.caption);
+                    },
+
+                    fromPrev: function () {
                         // it's wrapped with the events API too.
                         this.trigger('lol');
 
                     },
-                    exit: function () {
-                        // call something from this closure
-                        doSomething();
+                    fromNext: function () {
+
                     },
+                    toPrev: function () {
+
+                    },
+                    toNext: function () {
+
+                    },
+
+                    // a custom event handler
                     lol: function () {
                         console.log('lol I triggered an event on myself');
                     }
@@ -80,8 +94,10 @@ CHOREO.addScene('second', function (scene) {
 });
 
 // Start listening for input
-
 CHOREO.start();
+
+// Useful for debugging, prints info to console
+CHOREO.inspect();
 
 // Query the state, get only
 
@@ -106,3 +122,9 @@ CHOREO.start();
 
 // CHOREO.enableKeyboard();
 // CHOREO.disableKeyboard();
+
+// The global object also triggers events
+
+CHOREO.on('next prev', function () {
+    console.log('global events "next" or "prev" triggered');
+})
