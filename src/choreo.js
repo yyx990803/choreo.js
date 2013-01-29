@@ -188,6 +188,13 @@
 
     Events.mixTo(Step)
 
+    // Sequence ===============================================================
+    //   utility for animation sequence
+
+    var Sequence = function () {
+        // TODO
+    }
+
     // Private methods ========================================================
 
     function _nextScene () {
@@ -410,6 +417,10 @@
             totalScenes: _totalScenes
         })
     }
+
+    // Expose internal classes
+    choreo.Scene = Scene
+    choreo.Sequence = Sequence
 
     window.CHOREO = choreo
 
