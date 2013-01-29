@@ -418,8 +418,16 @@
         })
     }
 
-    // Expose internal classes
-    choreo.Scene = Scene
+    // Plugins ================================================================
+
+    choreo.install = function (plugin) {
+        // TODO
+        // inject style
+        // add hooks
+        // modify classes?...
+    }
+
+    // Expose utility classes =================================================
     choreo.Sequence = Sequence
 
     window.CHOREO = choreo
