@@ -265,7 +265,8 @@
         _totalScenes = _scenes.length
         _totalSteps  = 0
         _scenes.forEach(function (scene) {
-            _totalSteps += scene.steps.length + 1 // extra 1 step counted for the starting state of each scene
+            // extra 1 step counted for the starting state of each scene
+            _totalSteps += scene.steps.length + 1
         })
 
         // listen for keyboard events
@@ -306,8 +307,7 @@
 
             _log(3, 'next step called')
             choreo
-                .trigger('next')
-                .trigger('nextStep')
+                .trigger('change', 1)
 
             _currentScene.nextStep()
             _currentStep = _currentScene.currentStep
@@ -317,8 +317,8 @@
 
             _log(3, 'next scene called')
             choreo
-                .trigger('next')
-                .trigger('nextScene')
+                .trigger('change', 1)
+                .trigger('changeScene', 1)
 
             _currentStepIndex += 1
             _nextScene()
@@ -342,8 +342,7 @@
 
             _log(3, 'prev step called')
             choreo
-                .trigger('prev')
-                .trigger('prevStep')
+                .trigger('change', -1)
 
             _currentScene.prevStep()
             _currentStepIndex -= 1
@@ -353,8 +352,8 @@
 
             _log(3, 'prev scene called')
             choreo
-                .trigger('prev')
-                .trigger('prevScene')
+                .trigger('change', -1)
+                .trigger('changeScene', -1)
 
             _currentStepIndex -= 1
             _prevScene()
@@ -367,6 +366,10 @@
         }
 
         _log(2, 'at step ' + (_currentStepIndex+1) + '/' + _totalSteps)
+    }
+
+    choreo.goTo = function () {
+        // TODO
     }
 
     choreo.getScene = function (id) {

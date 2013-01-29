@@ -40,10 +40,10 @@ CHOREO.addScene('first', function (scene) {
                         console.log(this.caption);
                     },
 
+                    // for
                     fromPrev: function () {
                         // it's wrapped with the events API too.
                         this.trigger('lol');
-
                     },
                     fromNext: function () {
 
@@ -125,6 +125,6 @@ CHOREO.inspect();
 
 // The global object also triggers events
 
-CHOREO.on('next prev', function () {
-    console.log('global events "next" or "prev" triggered');
+CHOREO.on('change', function (dir) {
+    console.log('change ' + (dir > 0 ? '+1' : '-1'));
 })
