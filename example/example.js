@@ -1,48 +1,46 @@
-CHOREO.setDebugLevel(2);
+CHOREO.setDebugLevel(2); // 0 ~ 3 larger number = more verbose
 
 // Init a scene
-
 CHOREO.addScene('first', function (scene) {
 
-    // gives you a closure to do private work...
+    // do private work...
+    function doSomething () {
+        console.log('do something');
+    }
 
-    // The scene has the Events API mixed in
-    // so you can trigger and listen for both built-in and custom events
-
-    // default event list:
-    // init | enter | exit
-
+    // set caption
     scene.caption = 'this is a caption';
 
-    // chainable events API
+    // The scene has the chainable Events API mixed in
+    // so you can trigger and listen for both built-in and custom events
+    // default events: enter | exit
     scene
         .on('enter', function (dir) {
+            // dir = 1 -> going forward
+            // dir = -1 -> going backward
             console.log(this.id); // `this` is bound to the scene object!
             console.log('entering ' + this.id + ' from ' + dir);
         })
-        .on('cool', function (msg) {
-            console.log('cool event triggered from dir:' + msg);
-        })
-        .on('cooler', function (msg) {
-            console.log('cooler event triggered from dir:' + msg);
+        .on('cool', function (arg) {
+            console.log('cool event triggered with extra argument:' + arg);
         })
         .addSteps([
 
             {
-                caption: 'this is a caption for a step',
+                caption: 'this is a caption for a step', // caption is optional
                 events: {
                     enter: function (dir) {
-                        // dir = 1 -> going forward
-                        // dir = -1 -> going backward
+                        // trigger something on the scene
                         scene.trigger('cool', dir);
-
                         // this is bound to the step object, but not this plain object...
                         console.log(this.caption);
-                        // it's wrapped with the events API too!
+                        // it's wrapped with the events API too.
                         this.trigger('lol');
+
                     },
                     exit: function () {
-
+                        // call something from this closure
+                        doSomething();
                     },
                     lol: function () {
                         console.log('lol I triggered an event on myself');
@@ -67,7 +65,6 @@ CHOREO.addScene('first', function (scene) {
     // Use scene.exports to expose public stuff
     // you can actually attach any thing to the scene object
     // this is just for keeping it a bit cleaner
-
     var someData = '12345';
     scene.exports.data = someData;
 

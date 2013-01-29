@@ -138,6 +138,7 @@
             this.steps.push(new Step(stepsArr[i]))
         }
         this.currentStep = this.steps[0]
+        return this
     }
 
     Scene.prototype.nextStep = function () {
